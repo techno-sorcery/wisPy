@@ -1,4 +1,4 @@
-# Website Interpretor, Static aka wisPy (not a backronym guys I swear)
+# Website Interpreter, Static aka wisPy (not a backronym guys I swear)
 # Hayden Buscher, 2023
 
 import markdown
@@ -10,7 +10,6 @@ config = configparser.ConfigParser()
 # Main method
 def main() -> None:
 	params = configParse('wispy_config.ini')
-	#mdConvert(open(pathIn,'r'),open(pathOut,'w'))
 
 	for i in range(len(params)):
 		pathIn = params[i][0]
@@ -19,8 +18,7 @@ def main() -> None:
 				pathOut = params[i][1] + os.path.splitext(file)[0] + '.html'
 
 				print(pathIn+file+' -> '+pathOut)
-				mdConvert(open(pathIn+file,'r'),open(pathOut,'w'))
-		
+				mdConvert(open(pathIn+file,'r'),pathOut,params[i][2])	
 
 # Parse configuration file
 def configParse(path) -> list:
@@ -61,12 +59,62 @@ def configParse(path) -> list:
 			params.append((pathIn, pathOut, template))
 		return params
 
-# Convert individual .md file to .html
-def mdConvert(fileIn, fileOut) -> None:
-	thisIn = fileIn.readlines()
-	for line in thisIn:
-		thisLine = markdown.markdown(line)
-		fileOut.write(thisLine+'\n')
+# Create .html file, handle template
+def mdConvert(fileIn, fileOutPath, template) -> None:
+	fileOut = open(fileOutPath,'w')
+
+	# Checks if template is in use
+	if not template is None:
+		useTemplate = False
+		
+		# Writes template to file
+		for line in open(template,'r').readlines():
+			# Looks for <head>, and inserts metadata
+			if '<head>' in line:
+				fileOut.write(line)
+				metaParse(fileIn, fileOut)
+			# Looks for INSERT tag
+			elif '<!--INSERT-->' in line:
+				useTemplate = True
+				markParse(fileIn, fileOut)
+			else:
+				fileOut.write(line)
+				
+		# Clears file if insert tag not found
+		if not useTemplate:
+			open(fileOutPath,'w').close()
+			fileOut = open(fileOutPath,'w')
+			markParse(fileIn, fileOut)
+	else:
+		markParse(fileIn, fileOut)
+
+# Convert and write markdown text to file
+def markParse(fileIn, fileOut) -> None:
+	head = True
+	write = True
+	for line in fileIn.readlines():
+		if '---' in line and head:
+			write = False
+		elif '---' in line and not head:
+			write = True
+		elif write:
+			thisLine = markdown.markdown(line)
+			fileOut.write(thisLine+'\n')
+		head = False
+
+# Convert and write metadata to file
+def metaParse(fileIn, fileOut) -> None:
+	head = True
+	for line in fileIn.readlines():
+		line = line.strip()
+		if (not('---' in line)and head) or ('---' in line and not head):
+			break
+		# title
+		elif 'title: ' in line:
+			print('<title>'+line[7:]+'</title>'+'\n')
+			fileOut.write('<title>'+line[7:]+'</title>'+'\n')
+		head = False
+
 
 if __name__ == "__main__":
     main()
