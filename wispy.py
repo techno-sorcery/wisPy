@@ -1,24 +1,37 @@
 # Website Interpreter, Static aka wisPy (not a backronym guys I swear)
-# Hayden Buscher, 2023
+# Hayden Buscher, 2023 - Version 1.0
 
 import markdown
 import configparser
 import os
 
 config = configparser.ConfigParser()
+md = markdown.Markdown(extensions = ['meta'])
+metaList = ['author', 'keywords', 'description', 'viewport']
 
 # Main method
 def main() -> None:
 	params = configParse('wispy_config.ini')
-
+	print(params)
+	# Parse through folders specified in config
 	for i in range(len(params)):
 		pathIn = params[i][0]
+		metadata = []
+
 		for file in os.listdir(pathIn):
 			if file.lower().endswith('.md'):
 				pathOut = params[i][1] + os.path.splitext(file)[0] + '.html'
 
+				# md to html conversion
 				print(pathIn+file+' -> '+pathOut)
-				mdConvert(open(pathIn+file,'r'),pathOut,params[i][2])	
+				
+				metadata.append(mdConvert(pathIn+file,pathOut,params[i][2]))
+		#contents(metadata)
+
+# Generate table of contents
+def contents(metadata):
+	for i in metadata:
+		pass
 
 # Parse configuration file
 def configParse(path) -> list:
@@ -55,13 +68,23 @@ def configParse(path) -> list:
 				pathIn = pathIn+'/'
 			if not pathOut.endswith('/'):
 				pathOut = pathOut+'/'
+			
+			# Fill in home directory refrences
+			if pathIn.startswith('~'):
+				pathIn = os.path.expanduser('~')+pathIn[1:]
+			if pathOut.startswith('~'):
+				pathOut = os.path.expanduser('~')+pathOut[1:]
+			if template.startswith('~'):
+				template = os.path.expanduser('~')+template[1:]
 
 			params.append((pathIn, pathOut, template))
 		return params
 
 # Create .html file, handle template
-def mdConvert(fileIn, fileOutPath, template) -> None:
+def mdConvert(fileInPath, fileOutPath, template): # -> None:
+	fileIn = open(fileInPath,'r').read()
 	fileOut = open(fileOutPath,'w')
+	parsedMeta = None
 
 	# Checks if template is in use
 	if not template is None:
@@ -72,11 +95,13 @@ def mdConvert(fileIn, fileOutPath, template) -> None:
 			# Looks for <head>, and inserts metadata
 			if '<head>' in line:
 				fileOut.write(line)
-				metaParse(fileIn, fileOut)
+				output = metaParse(fileIn, fileOut)
+				fileIn = output[0]
+				parsedMeta = output[1]
 			# Looks for INSERT tag
 			elif '<!--INSERT-->' in line:
 				useTemplate = True
-				markParse(fileIn, fileOut)
+				fileOut.write(markdown.markdown(fileIn))
 			else:
 				fileOut.write(line)
 				
@@ -84,37 +109,20 @@ def mdConvert(fileIn, fileOutPath, template) -> None:
 		if not useTemplate:
 			open(fileOutPath,'w').close()
 			fileOut = open(fileOutPath,'w')
-			markParse(fileIn, fileOut)
+			fileOut.write(markdown.markdown(fileIn))
 	else:
-		markParse(fileIn, fileOut)
-
-# Convert and write markdown text to file
-def markParse(fileIn, fileOut) -> None:
-	head = True
-	write = True
-	for line in fileIn.readlines():
-		if '---' in line and head:
-			write = False
-		elif '---' in line and not head:
-			write = True
-		elif write:
-			thisLine = markdown.markdown(line)
-			fileOut.write(thisLine+'\n')
-		head = False
+		fileOut.write(markdown.markdown(fileIn))
+	return parsedMeta
 
 # Convert and write metadata to file
-def metaParse(fileIn, fileOut) -> None:
-	head = True
-	for line in fileIn.readlines():
-		line = line.strip()
-		if (not('---' in line)and head) or ('---' in line and not head):
-			break
-		# title
-		elif 'title: ' in line:
-			print('<title>'+line[7:]+'</title>'+'\n')
-			fileOut.write('<title>'+line[7:]+'</title>'+'\n')
-		head = False
-
+def metaParse(fileIn, fileOut): # -> None:
+	html = md.convert(fileIn)
+	if 'title' in md.Meta:
+		fileOut.write('\t<title>'+md.Meta['title'][0]+'</title>\n')
+	for i in metaList:
+		if i in md.Meta:
+			fileOut.write('\t<meta name=\"'+i+'\" content=\"'+md.Meta[i][0]+'\">\n')
+	return (html,md.Meta)
 
 if __name__ == "__main__":
     main()
