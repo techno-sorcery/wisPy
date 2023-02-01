@@ -12,7 +12,6 @@ metaList = ['author', 'keywords', 'description', 'viewport']
 # Main method
 def main() -> None:
 	params = configParse('wispy_config.ini')
-	print(params)
 	# Parse through folders specified in config
 	for i in range(len(params)):
 		pathIn = params[i][0]
@@ -24,64 +23,49 @@ def main() -> None:
 
 				# md to html conversion
 				print(pathIn+file+' -> '+pathOut)
-				
-				metadata.append(mdConvert(pathIn+file,pathOut,params[i][2]))
-		#contents(metadata)
+				metadata.append(mdConvert(pathIn+file,pathOut,params[i]))
 
-# Generate table of contents
-def contents(metadata):
-	for i in metadata:
-		pass
-
-# Parse configuration file
+# Parse config file
 def configParse(path) -> list:
 		config.read(path)
 		paths = config.sections()
 		params: list = []
-
+		
 		for i in paths:
 			keyList = list(config[i].keys())
+			tempParams = {'input': None, 'output': None, 'template': None, 'suffix': None}
 
 			# Input value error checking
 			if not 'input' in keyList or config[i]['input'] == '':
 				print('Invalid input path for '+i+', aborting.')
 				exit()
+
+			for j in range(len(keyList)):
+				index = keyList[j]
+				# Set parameters
+				if index in tempParams and not(config[i][keyList[j]] == ''):
+					tempParams[index] = config[i][index]
+					# Ensure paths end with /
+					if not tempParams[index].endswith('/') and (index == 'input' or index == 'output' or index == 'tableOut'):
+						tempParams[index] = tempParams[index]+'/'
+					# Fill in home directory refrences
+					if tempParams[index].startswith('~'):
+						tempParams[index] = os.path.expanduser('~')+tempParams[index][1:]
 			
-			pathIn = config[i]['input']
-			pathOut: str = ''
-			template: str = None
+			# Blank path checking
+			if tempParams['output'] is None:
+				tempParams['output'] = tempParams['input']
 
-			# Check if 'output' exists
-			if 'output' in keyList and not(config[i]['output'] == ''):
-				pathOut = config[i]['output']
-			else:
-				pathOut = pathIn
-
-			# Check if 'template' exists
-			if 'template' in keyList:
-				template = config[i]['template']
-				if template == '':
-					template = None
-
-			# Ensure paths end with /
-			if not pathIn.endswith('/'):
-				pathIn = pathIn+'/'
-			if not pathOut.endswith('/'):
-				pathOut = pathOut+'/'
-			
-			# Fill in home directory refrences
-			if pathIn.startswith('~'):
-				pathIn = os.path.expanduser('~')+pathIn[1:]
-			if pathOut.startswith('~'):
-				pathOut = os.path.expanduser('~')+pathOut[1:]
-			if template.startswith('~'):
-				template = os.path.expanduser('~')+template[1:]
-
-			params.append((pathIn, pathOut, template))
+			# Generate list from dict
+			myParams = []
+			for i in tempParams.values():
+				myParams.append(i)
+			params.append(myParams)	
 		return params
 
-# Create .html file, handle template
-def mdConvert(fileInPath, fileOutPath, template): # -> None:
+# Create .html file, apply template
+def mdConvert(fileInPath, fileOutPath, params): # -> None:
+	template = params[2]
 	fileIn = open(fileInPath,'r').read()
 	fileOut = open(fileOutPath,'w')
 	parsedMeta = None
@@ -95,7 +79,7 @@ def mdConvert(fileInPath, fileOutPath, template): # -> None:
 			# Looks for <head>, and inserts metadata
 			if '<head>' in line:
 				fileOut.write(line)
-				output = metaParse(fileIn, fileOut)
+				output = metaParse(fileIn, fileOut, params[3])
 				fileIn = output[0]
 				parsedMeta = output[1]
 			# Looks for INSERT tag
@@ -115,10 +99,12 @@ def mdConvert(fileInPath, fileOutPath, template): # -> None:
 	return parsedMeta
 
 # Convert and write metadata to file
-def metaParse(fileIn, fileOut): # -> None:
+def metaParse(fileIn, fileOut, suffix): # -> None:
+	if suffix is None:
+		suffix = ''
 	html = md.convert(fileIn)
 	if 'title' in md.Meta:
-		fileOut.write('\t<title>'+md.Meta['title'][0]+'</title>\n')
+		fileOut.write('\t<title>'+md.Meta['title'][0]+suffix+'</title>\n')
 	for i in metaList:
 		if i in md.Meta:
 			fileOut.write('\t<meta name=\"'+i+'\" content=\"'+md.Meta[i][0]+'\">\n')
