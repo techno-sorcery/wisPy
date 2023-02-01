@@ -17,7 +17,7 @@ suffix =      &nbsp- My Blog            optional page title suffix
 Note that any number of groups can be included in the same file. The only necessary parameter is "input"; you are not required to specify an output folder, template, or suffix.
 
 ## Templates
-Unlike other site generators, wisPy uses vanilla html files as templates. It looks for an <!--INSERT--> tag in the template before writing the converted text. Everything else is preserved, including style and script tags.
+Unlike other site generators, wisPy uses vanilla html files as templates. It looks for an \<!--INSERT--> tag before writing the converted text. Everything else is preserved, including style and script tags.
 
 ## Plans
 wisPy will never become a content management system, that defeats its entire point. However, I'm open to the addition of some basic features. For instance, one feature that's currently in progress is table-of-contents generation.
