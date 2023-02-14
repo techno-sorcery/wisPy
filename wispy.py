@@ -59,10 +59,9 @@ def main() -> None:
 					if not paramsTemp['sitemap'] is None and paramsTemp['sitemap'].lower() == 'true':
 						useMap = True
 						mapAdd(pathOut+ os.path.splitext(file)[0] + '.html',sitemap,paramsTemp)
-						sitemap.write('</urlset>')
 				else:
 					os.remove(pathOut+ os.path.splitext(file)[0] + '.html')
-
+	sitemap.write('</urlset>')
 	# Delete sitemap if not enabled
 	if not useMap:
 		os.remove(mapPath)
