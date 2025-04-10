@@ -2,7 +2,7 @@
 title: wisPy
 author: Hayden Buscher
 description: A dead-simple static site generator, for those who want nothing more than to convert markdown to html.
-lastmod: 2023-02-14
+lastmod: 04/09/2025
 ---
 
 ### Website Interpreter, Static aka wisPy  
@@ -16,25 +16,38 @@ wisPy is different- all it does is scrape markdown files from any number of inpu
 
 If you'd like to see what wisPy can do, well... I use it to generate most of this site's content.<br><br>
 
+**Usage and Installation**
+wisPy was developed with Linux, for Linux. You can probably get it to run under Windows, but I haven't tried doing so. Installation is as easy as going to the git folder and running install.sh. If all goes to plan, you should have the "wispy" script in your "~/.local/bin" folder.
+
+To use wispy, just invoke it via the "wispy" command in any directory with a "wispy_config.ini" file. To point it toward such a place, you can also specify a path after the command name.
+
 **Config System**  
 Parameters are defined in the wispy_config.ini file, in groups known as "tags". Regular tags operate within the scope of a single folder, but parameters can also be defined globally with the "global" tag. An example of my site's config file is below:
 
 <pre>
 # Define global params
 [global]
-root =          ..
-template =      ../global/template.html
+template =      global/template.html
 suffix =        &nbsp— Techno-Sorcery
 sitemap =       true
 url =           https://techno-sorcery.com
 css =           /global/css/main.css /global/css/responsive.css
+navnews =       class="navlink"
+navproj =       class="navlink"
+navent =        class="navlink"
+navmisc =       class="navlink"
+navabout =      class="navlink"
+
 
 # Define local params
 [main]
-input =     ../main/md
-output =    ../main
+input =     main/md
+output =    main
 priority =  1
+format =    date — title:link
 </pre>
+
+As you can see, I've defined a series of "nav\_\__" tags. These are custom variables, accessible from anywhere within their defined scope, and assignable to any string of text. The invocation of these is covered in the *Templates* section.
 
 Any number of tags can be included in the same file. The only necessary parameter is "input"; you are not required to specify an output folder, template, or suffix.
 
@@ -81,7 +94,9 @@ lastmod: 2023-02-14
 Note that metadata overrides local definitions, and local definitions override global ones. Through this system, you can exercise a great deal of flexibility.<br><br>
 
 **Templates**  
-Unlike other site generators, wisPy uses vanilla html files as templates. First, it looks for a <!––HEAD––> tag in the head to begin inserting metadata. Then, it looks for a an <!––INSERT––> tag in the body before writing the converted html. Everything within the template is preserved, including style and script tags.
+Unlike other site generators, wisPy uses vanilla html files as templates. First, it looks for a **{{ HEAD }}** tag in the head to begin inserting metadata. Then, it looks for a an **{{ INSERT }}** tag in the body before writing the converted html. Everything within the template is preserved, including style and script tags.
+
+You can also include **{{ VAR:variablename }}** tags wherever you want wisPy to insert text stored in variables.
 <br><br>
 
 **Sitemaps**  
