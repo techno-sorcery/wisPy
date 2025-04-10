@@ -1,18 +1,37 @@
 # Website Interpreter, Static aka wisPy (not a backronym guys I swear)
-# Hayden Buscher, 2023 - Version 1.1.0
+# Hayden Buscher, 2023 - 2025
 
 import markdown
 import configparser
 import os
+import sys
 
 config = configparser.ConfigParser()
 md = markdown.Markdown(extensions = ['meta'])
-version = '1.1.0'
+version = '1.2'
+
 
 # Main method
 def main() -> None:
 
+    # Input parameters
+    if len(sys.argv) == 2:
+        try:
+            os.chdir(sys.argv[1])
+        except:
+            print("Invalid directory path '%s'" % sys.argv[1])
+            exit()
+
+    elif len(sys.argv) > 2:
+        print("Excessive arguments")
+        exit()
+
+
     # Get parameters
+    if not os.path.isfile('wispy_config.ini'):
+        print("'wispy_config.ini' not present in target directory")
+        exit()
+    
     params = configParse('wispy_config.ini')
     globalParams = params[1]
     params = params[0]
